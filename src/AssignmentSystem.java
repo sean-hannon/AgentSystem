@@ -3,14 +3,12 @@ import java.util.*;
 class AssignmentSystem {
     private static class Agent {
         String name;
-        int assignments;
-        int limit;
+        int assignments = 0;
+        int limit = 2; // Default limit
         long lastAssignedTime;
 
         public Agent(String name) {
             this.name = name;
-            this.assignments = 0;
-            this.limit = 2; // Default limit
             this.lastAssignedTime = System.nanoTime();
         }
     }
@@ -19,10 +17,9 @@ class AssignmentSystem {
     private Map<String, Agent> agentMap;
 
     public AssignmentSystem(List<String> agents) {
-        agentMap = new HashMap<>();
-        queue = new PriorityQueue<>((a, b) -> a.assignments == b.assignments
-                ? Long.compare(a.lastAssignedTime, b.lastAssignedTime)
-                : Integer.compare(a.assignments, b.assignments));
+        agentMap = new HashMap<>(agents.size());
+        queue = new PriorityQueue<>(Comparator.comparingInt((Agent a) -> a.assignments)
+                .thenComparingLong(a -> a.lastAssignedTime));
 
         for (String agent : agents) {
             Agent newAgent = new Agent(agent);
@@ -33,8 +30,7 @@ class AssignmentSystem {
 
     public void setLimit(String agentName, int limit) {
         if (agentMap.containsKey(agentName)) {
-            Agent agent = agentMap.get(agentName);
-            agent.limit = limit;
+            agentMap.get(agentName).limit = limit;
         }
     }
 
@@ -45,18 +41,18 @@ class AssignmentSystem {
         if (agent.assignments < agent.limit) {
             agent.assignments++;
             agent.lastAssignedTime = System.nanoTime();
-            System.out.println("Assigning call " + id + " to " + agent.name);
             queue.offer(agent);
+            System.out.println("Assigning call " + id + " to " + agent.name);
             return agent.name;
         }
         return null;
     }
 
     public List<String> getAssignmentQueue(int n) {
-        List<String> result = new ArrayList<>();
+        List<String> result = new ArrayList<>(n);
         PriorityQueue<Agent> tempQueue = new PriorityQueue<>(queue);
 
-        for (int i = 0; i < n && !tempQueue.isEmpty(); i++) {
+        while (n-- > 0 && !tempQueue.isEmpty()) {
             Agent agent = tempQueue.poll();
             if (agent.assignments < agent.limit) {
                 result.add(agent.name);
